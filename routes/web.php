@@ -31,6 +31,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
     Route::get('/calendario', [\App\Http\Controllers\CalendarioController::class, 'index'])->name('calendario.index');
     Route::get('/ventas', [\App\Http\Controllers\VentaController::class, 'index'])->name('ventas.index');
+    Route::resource('clientes', App\Http\Controllers\ClientController::class)->middleware(['auth']);
+    Route::resource('categories', App\Http\Controllers\ClientCategoryController::class)->except(['index', 'create', 'show', 'edit']);
+    Route::resource('product_categories', App\Http\Controllers\ProductCategoryController::class)->except(['index', 'create', 'show', 'edit']);
+    Route::resource('productos', App\Http\Controllers\ProductController::class);
+    Route::get('/stock', [App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
+    Route::put('/stock/{producto}', [App\Http\Controllers\StockController::class, 'update'])->name('stock.update');
+    Route::get('/calendario', [App\Http\Controllers\DailyLogController::class, 'index'])->name('calendario.index');
+
+
+    Route::post('/diariolog', [App\Http\Controllers\DailyLogController::class, 'store'])->name('diariolog.store');
+Route::put('/diariolog/{dailyLog}', [App\Http\Controllers\DailyLogController::class, 'update'])->name('diariolog.update'); // Para editar
+Route::delete('/diariolog/{dailyLog}', [App\Http\Controllers\DailyLogController::class, 'destroy'])->name('diariolog.destroy'); // Para eliminar
+
+Route::resource('ventas', App\Http\Controllers\SaleController::class);
+Route::get('ventas/{sale}/invoice', [App\Http\Controllers\SaleController::class, 'generateInvoice'])->name('ventas.invoice');
 });
 
 
