@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductCategory; 
+use App\Models\Client; // ⬅️ ¡IMPORTACIÓN AGREGADA!
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect; 
 
@@ -30,9 +31,13 @@ class ProductController extends Controller
         }
 
         $products = $query->with('category')->orderBy('id', 'desc')->paginate(10);
+        
+        // 🚨 SOLUCIÓN: Cargar la colección de clientes para la vista Blade
         $categories = ProductCategory::all(); 
+        $clients = Client::all(); 
 
-        return view('vistas.productos', compact('products', 'categories'));
+        // Retornar la vista, pasando AMBAS variables
+        return view('vistas.productos', compact('products', 'categories', 'clients')); // ⬅️ $clients se pasa aquí
     }
 
     public function store(Request $request)
@@ -42,6 +47,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'weight_grams' => 'nullable|integer|min:0',
             'product_category_id' => 'nullable|exists:product_categories,id', 
         ]);
         
@@ -57,6 +63,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'weight_grams' => 'nullable|integer|min:0',
             'product_category_id' => 'nullable|exists:product_categories,id',
         ]);
         

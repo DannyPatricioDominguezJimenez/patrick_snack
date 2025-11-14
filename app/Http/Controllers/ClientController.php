@@ -1,22 +1,26 @@
 <?php
-
+// App/Http/Controllers/ClientController.php
 namespace App\Http\Controllers;
 
 use App\Models\Client;
-use App\Models\ClientCategory; // <-- Importante: Importar el modelo de categorías
+use App\Models\ClientCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect; 
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
     /**
-     * Helper para formatear la cédula (10 ceros si está vacía)
+     * Helper para formatear la cédula/RUC (13 ceros si está vacía)
      */
     protected function formatCedula(?string $cedula): string
     {
+        // Si está vacío, rellenar con 13 ceros, asumiendo RUC/Cédula largo como estándar.
         if (empty($cedula)) {
-            return str_pad('', 10, '0'); 
+            return str_pad('', 13, '0'); 
         }
-        return str_pad($cedula, 10, '0', STR_PAD_LEFT); 
+        // Si no está vacío, devolver el valor validado.
+        return $cedula; 
     }
     
     /**
@@ -26,7 +30,10 @@ class ClientController extends Controller
     {
         $query = Client::query();
         $search = $request->input('search');
-        $categoryFilter = $request->input('category_id'); // <-- Nuevo filtro por ID de categoría
+        $categoryFilter = $request->input('client_category_id'); // Corregido el nombre de input
+        
+        // Cargar colecciones necesarias para la vista
+        $categories = ClientCategory::all();
 
         // 1. Búsqueda Global (Cédula, Nombre, Email, Teléfono)
         if ($search) {
@@ -38,20 +45,15 @@ class ClientController extends Controller
             });
         }
         
-        // 2. Filtro por Categoría (Nuevo)
+        // 2. Filtro por Categoría
         if ($categoryFilter) {
-            // Asegura que solo se filtre si el valor es un ID válido
             $query->where('client_category_id', $categoryFilter); 
         }
 
-        // Cargamos la relación 'category' para evitar N+1 queries en la vista
         $clientes = $query->with('category')->orderBy('id', 'desc')->paginate(10);
-        
-        // Cargamos todas las categorías para los SELECTs y los Modales
-        $categories = ClientCategory::all();
 
-        // Cambié la vista a la que tienes en "vistas"
-        return view('vistas.clientes', compact('clientes', 'categories')); // <-- Pasamos $categories
+        // Retornar la vista, pasando AMBAS variables
+        return view('vistas.clientes', compact('clientes', 'categories'));
     }
 
     /**
@@ -60,20 +62,20 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'cedula' => 'nullable|string|digits:10',
+            // 🚨 CAMBIO CLAVE: Validación estricta de 13 dígitos
+            'cedula' => 'nullable|string|digits:13|unique:clients,cedula', 
             'nombre' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'telefono' => 'nullable|string|max:20',
             'direccion' => 'nullable|string|max:255',
-            'client_category_id' => 'nullable|exists:client_categories,id', // <-- Nuevo: valida que exista
+            'client_category_id' => 'nullable|exists:client_categories,id',
         ]);
         
-        // Formatear cédula antes de guardar
         $validated['cedula'] = $this->formatCedula($validated['cedula'] ?? null);
 
-        Client::create($validated);
-
-        return redirect()->route('clientes.index')->with('success', 'Cliente agregado correctamente.');
+        $client = Client::create($validated);
+        
+        return Redirect::route('clientes.index')->with('success', "Cliente '{$client->nombre}' agregado correctamente.");
     }
 
     /**
@@ -82,20 +84,20 @@ class ClientController extends Controller
     public function update(Request $request, Client $cliente)
     {
         $validated = $request->validate([
-            'cedula' => 'nullable|string|digits:10',
+            // 🚨 CAMBIO CLAVE: Validación estricta de 13 dígitos
+            'cedula' => ['nullable', 'string', 'digits:13', Rule::unique('clients', 'cedula')->ignore($cliente->id)],
             'nombre' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'telefono' => 'nullable|string|max:20',
             'direccion' => 'nullable|string|max:255',
-            'client_category_id' => 'nullable|exists:client_categories,id', // <-- Nuevo: valida que exista
+            'client_category_id' => 'nullable|exists:client_categories,id',
         ]);
         
-        // Formatear cédula antes de guardar
         $validated['cedula'] = $this->formatCedula($validated['cedula'] ?? null);
 
         $cliente->update($validated);
 
-        return redirect()->route('clientes.index')->with('success', 'Cliente actualizado correctamente.');
+        return Redirect::route('clientes.index')->with('success', "Cliente '{$cliente->nombre}' actualizado correctamente.");
     }
 
     /**
@@ -105,6 +107,6 @@ class ClientController extends Controller
     {
         $cliente->delete();
 
-        return redirect()->route('clientes.index')->with('success', 'Cliente eliminado correctamente.');
+        return Redirect::route('clientes.index')->with('success', 'Cliente eliminado correctamente.');
     }
 }

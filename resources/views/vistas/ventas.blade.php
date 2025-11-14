@@ -9,11 +9,11 @@
     {{-- ******************* ESTILOS CSS BASE Y MODAL ******************** --}}
     {{-- ***************************************************************** --}}
     <style>
-        /* [ ... ESTILOS CSS GENERALES Y DE MODAL (IDÉNTICOS A LOS MÓDULOS ANTERIORES) ... ] */
+        /* BASE Y LAYOUT */
         .crud-container { max-width: 1250px; margin: 0 auto; padding: 20px; }
         .card { background-color: #fff; border-radius: 14px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1); padding: 35px; margin-top: 30px; border: 1px solid #e0e0e0; }
         
-        /* BOTONES Y FORMULARIOS */
+        /* BOTONES GENERALES */
         .btn-base { border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
         .btn-primary { background-color: #0d6efd; color: white; }
         .btn-danger { background-color: #dc3545; color: white; }
@@ -35,13 +35,16 @@
 
         /* DETALLE DINÁMICO */
         .details-table th, .details-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9em; }
-        .modal-content { max-width: 900px; } /* Modal más ancho para el carrito */
         
         /* MODALES */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
         .modal.active { opacity: 1; display: flex; }
         .modal-content { background-color: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 900px; transform: scale(0.9); transition: transform 0.3s ease-out; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+        
+        /* Modal de Eliminación */
+        .modal-delete-content { max-width: 400px; text-align: center; padding: 30px; }
+        .modal-delete-content h3 { color: #dc3545; margin-bottom: 10px; }
     </style>
 
     <div class="py-12">
@@ -63,18 +66,18 @@
                     </div>
                 @endif
 
-                {{-- FORMULARIO DE FILTROS COMPLETÍSIMO --}}
+                {{-- FORMULARIO DE FILTROS --}}
                 <form method="GET" action="{{ route('ventas.index') }}" class="filter-form">
                     <div class="filter-grid">
                         
                         {{-- Filtro 1: Rango de Fechas --}}
                         <div class="filter-item">
                             <label for="start_date">Fecha Desde</label>
-                            <input type="date" name="start_date" id="start_date" value="{{ $startDate ?? now()->subDays(30)->toDateString() }}">
+                            <input type="date" name="start_date" id="start_date" value="{{ $startDate ?? '' }}">
                         </div>
                         <div class="filter-item">
                             <label for="end_date">Fecha Hasta</label>
-                            <input type="date" name="end_date" id="end_date" value="{{ $endDate ?? now()->toDateString() }}">
+                            <input type="date" name="end_date" id="end_date" value="{{ $endDate ?? '' }}">
                         </div>
 
                         {{-- Filtro 2: Cliente Individual --}}
@@ -92,7 +95,7 @@
                         
                         {{-- Filtro 3: Categoría de Cliente --}}
                         <div class="filter-item">
-                            <label for="client_category_id">Categoría de Cliente</label>
+                            <label for="client_category_id">Categoría Cliente</label>
                             <select name="client_category_id">
                                 <option value="">Todas las Categorías</option>
                                 @foreach ($clientCategories as $cat)
@@ -103,13 +106,15 @@
                             </select>
                         </div>
 
-                        {{-- Filtro 4: Productos (Checkboxes en un Desplegable) --}}
+                        {{-- Filtro 4: Productos (Checkboxes) --}}
                         <div class="filter-item" style="grid-column: span 1;">
                             <label for="product_ids">Filtrar por Productos</label>
-                            {{-- Simulamos un botón que abre un modal/desplegable para seleccionar --}}
                             <button type="button" onclick="openProductFilterModal()" class="btn-base btn-cancel" style="width: 100%; padding: 10px;">
                                 Seleccionar Productos
                             </button>
+                            @foreach ($products as $product)
+                                <input type="hidden" name="product_ids[]" id="hidden-prod-{{ $product->id }}" value="{{ in_array($product->id, request('product_ids', [])) ? $product->id : '' }}">
+                            @endforeach
                         </div>
                     </div>
                     
@@ -139,8 +144,9 @@
                                 <th>Fecha</th>
                                 <th>Cliente</th>
                                 <th>Total</th>
+                                <th>Método Pago</th> {{-- ⬅️ Nuevo Encabezado --}}
                                 <th>Estado</th>
-                                <th style="width: 250px;">Acciones</th>
+                                <th style="width: 280px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -150,20 +156,25 @@
                                     <td>{{ $sale->sale_date->format('d/m/Y') }}</td>
                                     <td>{{ $sale->client->nombre }}</td>
                                     <td style="font-weight: 700; color: #198754;">${{ number_format($sale->total_amount, 2) }}</td>
+                                    
+                                    {{-- ⬅️ Nuevo Campo --}}
+                                    <td>{{ $sale->payment_method }}</td>
+                                    
+                                    {{-- ⬅️ ComboBox de Estado Rápido --}}
                                     <td>
-                                        <span class="tag" style="background-color: {{ $sale->status == 'Cancelada' ? '#f8d7da' : '#d4edda' }}; color: {{ $sale->status == 'Cancelada' ? '#721c24' : '#155724' }};">
-                                            {{ $sale->status }}
-                                        </span>
+                                        <select onchange="updateSaleStatus({{ $sale->id }}, this.value)" 
+                                                style="padding: 5px; border-radius: 6px; border: 1px solid #ccc; background-color: {{ $sale->status == 'Cancelada' ? '#f8d7da' : ($sale->status == 'Pendiente' ? '#fff3cd' : '#d4edda') }}; color: {{ $sale->status == 'Cancelada' ? '#721c24' : ($sale->status == 'Pendiente' ? '#664d03' : '#155724') }};">
+                                            <option value="Pagada" {{ $sale->status == 'Pagada' ? 'selected' : '' }}>Pagada</option>
+                                            <option value="Pendiente" {{ $sale->status == 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                            <option value="Cancelada" disabled>Cancelada</option>
+                                        </select>
                                     </td>
+                                    
                                     <td>
+                                        {{-- Botones --}}
                                         <button onclick="openDetailsModal({{ $sale }})" class="btn-base" style="color: #0d6efd; padding: 8px;">📋 Detalle</button>
                                         <button onclick="openEditModal({{ $sale }})" class="btn-base" style="color: #0dcaf0; padding: 8px;">✏️ Editar</button>
-                                        
-                                        <form action="{{ route('ventas.destroy', $sale) }}" method="POST" style="display: inline;" onsubmit="return confirm('¿Eliminar venta? Se reajustará el stock.');">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn-base" style="color: #dc3545; padding: 8px;">🗑️ Cancelar</button>
-                                        </form>
-                                        
+                                        <button onclick="openDeleteConfirmModal({{ $sale }})" class="btn-base" style="color: #dc3545; padding: 8px;">🗑️ Cancelar</button>
                                         <a href="{{ route('ventas.invoice', $sale) }}" target="_blank" class="btn-base" style="color: #343a40; padding: 8px;">📄 Nota</a>
                                     </td>
                                 </tr>
@@ -196,7 +207,7 @@
                 <input type="hidden" name="_method" id="saleModalMethod" value="POST">
                 
                 <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-                    {{-- Columna 1: Encabezado --}}
+                    {{-- Columna 1: Cliente --}}
                     <div style="flex: 1;">
                         <label>Cliente</label>
                         <select name="client_id" id="client_id" required style="width: 100%; padding: 10px; border-radius: 6px;">
@@ -209,6 +220,25 @@
                     <div style="flex: 1;">
                         <label>Fecha de Venta</label>
                         <input type="date" name="sale_date" id="sale_date" value="{{ now()->toDateString() }}" required style="width: 100%; padding: 10px; border-radius: 6px;">
+                    </div>
+                </div>
+                
+                {{-- ⬅️ NUEVA FILA PARA MÉTODO Y ESTADO --}}
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label>Método de Pago</label>
+                        <select name="payment_method" id="payment_method" required style="width: 100%; padding: 10px; border-radius: 6px;">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Credito">Crédito</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Estado</label>
+                        <select name="status" id="status" required style="width: 100%; padding: 10px; border-radius: 6px;">
+                            <option value="Pagada">Pagada</option>
+                            <option value="Pendiente">Pendiente</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -254,20 +284,39 @@
         <div class="modal-content">
             <h3 id="detailsModalTitle">Detalles de la Venta #</h3>
             
-            <p>Cliente: <strong id="detailClientName"></strong></p>
-            <p>Fecha: <strong id="detailSaleDate"></strong></p>
-            <hr style="margin: 15px 0;">
+            <div style="display: flex; gap: 30px; margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                {{-- Columna 1: Información de la Venta --}}
+                <div style="flex: 1;">
+                    <p>Fecha de Venta: <strong id="detailSaleDate"></strong></p>
+                    <p>Estado: <strong id="detailSaleStatus"></strong></p>
+                    <p>Método Pago: <strong id="detailPaymentMethod"></strong></p> {{-- ⬅️ Nuevo --}}
+                </div>
+                {{-- Columna 2: Información del Cliente --}}
+                <div style="flex: 1;">
+                    <p>Cliente: <strong id="detailClientName"></strong></p>
+                    <p>Cédula: <strong id="detailClientCedula"></strong></p>
+                    <p>Categoría: <strong id="detailClientCategory"></strong></p>
+                </div>
+            </div>
 
+            <h4 style="font-size: 1.1em; font-weight: 700; margin-bottom: 10px; color: #333;">Productos del Pedido:</h4>
+            
             <table class="details-table" style="width: 100%;">
                 <thead>
-                    <tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr>
+                    <tr>
+                        <th>Producto</th>
+                        <th>SKU</th>
+                        <th>Cantidad Vendida</th>
+                        <th>Precio</th>
+                        <th>Subtotal</th>
+                    </tr>
                 </thead>
                 <tbody id="detailLinesBody">
                     {{-- Líneas de detalle inyectadas por JS --}}
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL:</td>
+                        <td colspan="4" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL FINAL:</td>
                         <td id="detailTotalAmount" style="font-weight: bold; padding-top: 15px; font-size: 1.2em; color: #198754;"></td>
                     </tr>
                 </tfoot>
@@ -279,7 +328,7 @@
         </div>
     </div>
 
-    {{-- MODAL 3: FILTRO DE PRODUCTOS (Para la vista Index) --}}
+    {{-- MODAL 3: FILTRO DE PRODUCTOS (Checkboxes) --}}
     <div id="productFilterModal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <h3>Seleccionar Productos a Filtrar</h3>
@@ -295,7 +344,7 @@
                         <div style="margin-bottom: 5px;">
                             <input type="checkbox" id="prod-{{ $product->id }}" name="product_ids[]" value="{{ $product->id }}" 
                                 {{ in_array($product->id, request('product_ids', [])) ? 'checked' : '' }}>
-                            <label for="prod-{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</label>
+                            <label for="prod-{{ $product->id }}">{{ $product->name }} (SKU: {{ $product->sku }})</label>
                         </div>
                     @endforeach
                 </div>
@@ -307,14 +356,40 @@
             </form>
         </div>
     </div>
+    
+    {{-- MODAL 4: CONFIRMACIÓN DE ELIMINACIÓN (CANCELAR VENTA) --}}
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content modal-delete-content">
+            <h3 style="margin-bottom: 15px;">¿Cancelar Venta?</h3>
+            <p>Estás a punto de cancelar la Venta <strong id="deleteSaleId"></strong> del cliente <strong id="deleteClientName"></strong>.</p>
+            <p style="font-weight: 600; color: #dc3545;">¡El stock de los productos vendidos será devuelto al inventario!</p>
+            
+            <form id="deleteForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                
+                {{-- Inputs ocultos para mantener filtros y paginación después de la eliminación --}}
+                <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
+                <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
+                <input type="hidden" name="page" value="{{ $sales->currentPage() }}">
+
+                <div class="modal-footer" style="justify-content: space-around;">
+                    <button type="button" onclick="closeModal('deleteConfirmModal')" class="btn-base btn-cancel">No, Mantener</button>
+                    <button type="submit" class="btn-base btn-danger">Sí, Cancelar Venta</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     {{-- ***************************************************************** --}}
     {{-- ************************ SCRIPTS JS (LÓGICA DINÁMICA) ************* --}}
     {{-- ***************************************************************** --}}
     <script>
+        // DATA GLOBAL (JSON-encoded de PHP a JS)
         const ALL_PRODUCTS = @json($products);
-        const CLIENTS = @json($clients);
+        // 🚨 Cargar CLIENTES con categoría para el modal de detalle.
+        const CLIENTS_WITH_DETAILS = @json($clientsWithCategory); 
         let productLineCounter = 0;
 
         // Base functions
@@ -331,6 +406,16 @@
                 document.getElementById('detailsBody').innerHTML = ''; // Limpiar carrito
                 productLineCounter = 0;
             }
+        }
+
+        // Utilidad para formatear la fecha
+        function formatDateDisplay(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date)) return dateString; 
+            
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            return date.toLocaleDateString('es-ES', options);
         }
 
         // --- MANEJO DEL CARRITO (CREATE / UPDATE) ---
@@ -380,7 +465,6 @@
             const quantityInput = row.querySelector('.quantity-input');
             const priceInput = row.querySelector('.unit-price');
 
-            // Listener para el cambio de producto
             select.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const price = parseFloat(selectedOption.getAttribute('data-price')) || 0.00;
@@ -388,7 +472,6 @@
                 calculateLine(index, price);
             });
 
-            // Listener para el cambio de cantidad
             quantityInput.addEventListener('input', function() {
                 const price = parseFloat(priceInput.value);
                 calculateLine(index, price);
@@ -407,7 +490,8 @@
             let total = 0;
             document.querySelectorAll('.subtotal-cell').forEach(cell => {
                 const subtotalText = cell.textContent.replace('$', '');
-                total += parseFloat(subtotalText) || 0;
+                // Usamos parseFloat aquí también, por seguridad
+                total += parseFloat(subtotalText) || 0; 
             });
             document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
         }
@@ -420,7 +504,10 @@
             document.getElementById('saleForm').setAttribute('action', '{{ route('ventas.store') }}');
             document.getElementById('saleModalMethod').value = 'POST';
             document.getElementById('detailsBody').innerHTML = '';
-            addProductLine(); // Añadir una línea por defecto
+            
+            document.getElementById('sale_date').value = new Date().toISOString().slice(0, 10);
+            
+            addProductLine();
             openModal('saleCrudModal');
         }
 
@@ -430,53 +517,89 @@
             document.getElementById('saleForm').setAttribute('action', `{{ url('ventas') }}/${sale.id}`);
             document.getElementById('saleModalMethod').value = 'PUT';
 
-            // Rellenar encabezado
+            // 🚨 Rellenar nuevos campos de pago y estado
+            document.getElementById('payment_method').value = sale.payment_method;
+            document.getElementById('status').value = sale.status;
+
             document.getElementById('client_id').value = sale.client_id;
             document.getElementById('sale_date').value = sale.sale_date.substring(0, 10);
 
-            // Limpiar y rellenar detalles
             document.getElementById('detailsBody').innerHTML = '';
             sale.details.forEach(detail => {
                 addProductLine(detail);
             });
             if (sale.details.length === 0) {
-                 addProductLine(); // Asegurar al menos una línea si no hay detalles
+                 addProductLine();
             }
             
             openModal('saleCrudModal');
         }
 
-        // Abrir Modal de Detalle (READ)
+        // Abrir Modal de Detalle (READ) ⬅️ FUNCIÓN CORREGIDA
         function openDetailsModal(sale) {
             document.getElementById('detailsModalTitle').textContent = `Detalles de la Venta #${sale.id}`;
-            document.getElementById('detailClientName').textContent = sale.client.nombre;
-            document.getElementById('detailSaleDate').textContent = sale.sale_date.substring(0, 10);
             
+            // 1. Obtener la data completa del cliente de la lista global
+            const clientData = CLIENTS_WITH_DETAILS.find(c => c.id === sale.client_id);
+            
+            // 2. Acceso seguro a las propiedades
+            const clientName = clientData ? clientData.nombre : 'N/A';
+            const clientCedula = clientData ? clientData.cedula : 'N/A';
+            const clientCategoryName = (clientData && clientData.category) ? clientData.category.name : 'N/A';
+            
+            // 3. Rellenar Información General
+            document.getElementById('detailClientName').textContent = clientName;
+            document.getElementById('detailSaleDate').textContent = formatDateDisplay(sale.sale_date);
+            document.getElementById('detailClientCedula').textContent = clientCedula; 
+            document.getElementById('detailClientCategory').textContent = clientCategoryName;
+            document.getElementById('detailSaleStatus').textContent = sale.status;
+            document.getElementById('detailPaymentMethod').textContent = sale.payment_method; // ⬅️ Nuevo campo
+
+            // 4. Rellenar Líneas de Detalle (Productos)
             const linesBody = document.getElementById('detailLinesBody');
             linesBody.innerHTML = '';
+            let total = 0; 
             
             sale.details.forEach(detail => {
-                const product = ALL_PRODUCTS.find(p => p.id === detail.product_id);
+                const product = detail.product;
+                
+                // 🚨 CONVERSIÓN CRÍTICA: Aseguramos que sea un número
+                const unitPrice = parseFloat(detail.unit_price);
+                const subtotal = parseFloat(detail.subtotal);
+                total += subtotal;
+
                 const row = linesBody.insertRow();
                 row.innerHTML = `
                     <td>${product ? product.name : 'Producto Eliminado'}</td>
+                    <td>${product ? product.sku : 'N/A'}</td>
                     <td>${detail.quantity}</td>
-                    <td>$${detail.unit_price.toFixed(2)}</td>
-                    <td>$${detail.subtotal.toFixed(2)}</td>
+                    <td>$${unitPrice.toFixed(2)}</td>
+                    <td>$${subtotal.toFixed(2)}</td>
                 `;
             });
 
-            document.getElementById('detailTotalAmount').textContent = '$' + sale.total_amount.toFixed(2);
+            document.getElementById('detailTotalAmount').textContent = '$' + total.toFixed(2); // Usamos el total local
 
             openModal('detailsModal');
         }
 
+        // Abrir Modal de Eliminación 
+        function openDeleteConfirmModal(sale) {
+            document.getElementById('deleteSaleId').textContent = `#${sale.id}`;
+            document.getElementById('deleteClientName').textContent = sale.client.nombre;
+            
+            const deleteForm = document.getElementById('deleteForm');
+            deleteForm.setAttribute('action', `{{ url('ventas') }}/${sale.id}`);
+
+            openModal('deleteConfirmModal');
+        }
+        
         // Abrir Modal de Filtro de Productos
         function openProductFilterModal() {
             openModal('productFilterModal');
         }
         
-        // --- MANEJO DE ERRORES DE LARAVEL (PARA REAPERTURA DE MODAL) ---
+        // --- MANEJO DE ERRORES DE LARAVEL ---
 
         @if ($errors->any())
             openModal('saleCrudModal'); 
@@ -491,11 +614,10 @@
                         const restoredDetail = {
                             product_id: detail.product_id,
                             quantity: detail.quantity,
-                            unit_price: productData.price // Usamos el precio actual del producto
+                            unit_price: productData.price 
                         };
                         addProductLine(restoredDetail);
                     } else {
-                        // Si el producto no se encuentra (caso raro), añadir línea vacía
                         addProductLine({product_id: detail.product_id, quantity: detail.quantity, unit_price: 0});
                     }
                 });

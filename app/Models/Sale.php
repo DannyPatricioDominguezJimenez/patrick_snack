@@ -14,6 +14,7 @@ class Sale extends Model
         'client_id',
         'sale_date',
         'total_amount',
+        'payment_method',
         'status',
     ];
 

@@ -15,6 +15,7 @@ class Product extends Model
         'name', 
         'description', 
         'price', 
+        'weight_grams', // Nuevo campo para el peso en gramos
         'product_category_id' // Clave foránea
     ];
 

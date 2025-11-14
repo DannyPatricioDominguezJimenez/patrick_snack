@@ -5,65 +5,44 @@
         </h2>
     </x-slot>
 
-    {{-- [ ... ESTILOS CSS COMPLETOS (Idénticos a la vista de Clientes) ... ] --}}
-    
+    {{-- ***************************************************************** --}}
+    {{-- ******************* ESTILOS CSS BASE Y MODAL ******************** --}}
+    {{-- ***************************************************************** --}}
     <style>
-        /* (PEGAR AQUI EL BLOQUE COMPLETO DE ESTILOS CSS de la vista anterior) */
-        
         /* BASE Y LAYOUT */
         .crud-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .card { 
-            background-color: #fff; 
-            border-radius: 14px; 
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1); 
-            padding: 35px; 
-            margin-top: 30px; 
-            border: 1px solid #e0e0e0;
-        }
+        .card { background-color: #fff; border-radius: 14px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1); padding: 35px; margin-top: 30px; border: 1px solid #e0e0e0; }
         
         /* BOTONES GENERALES */
         .btn-base { border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-primary { background-color: #0d6efd; color: white; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4); }
-        .btn-primary:hover { background-color: #0b5ed7; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(13, 110, 253, 0.6); }
+        .btn-primary { background-color: #0d6efd; color: white; }
         .btn-secondary { background-color: #6f42c1; color: white; margin-left: 10px; }
-        .btn-secondary:hover { background-color: #5936a7; transform: translateY(-1px); }
         .btn-danger { background-color: #dc3545; color: white; }
-        .btn-danger:hover { background-color: #bb2d3b; transform: translateY(-1px); }
         .btn-clear { background-color: #6c757d; color: white; }
-        .btn-clear:hover { background-color: #5a6268; }
 
         /* FILTROS */
-        .filter-form { background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; border: 1px solid #e9ecef; }
-        .filter-form input, .filter-form select { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; width: 280px; transition: border-color 0.3s; }
-        .filter-form input:focus, .filter-form select:focus { border-color: #0d6efd; outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }
+        .filter-form { background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #e9ecef; }
+        .filter-form input, .filter-form select { padding: 12px; border: 1px solid #ced4da; border-radius: 6px; width: 280px; }
 
         /* TABLA */
         .data-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
         .data-table th, .data-table td { padding: 16px; text-align: left; }
-        .data-table thead th { background-color: #e9ecef; color: #343a40; font-weight: 700; border-bottom: 2px solid #dee2e6; text-transform: uppercase; font-size: 0.9em; }
-        .data-table tbody tr { border-bottom: 1px solid #f1f1f1; transition: background-color 0.2s ease; }
+        .data-table thead th { background-color: #e9ecef; color: #343a40; font-weight: 700; text-transform: uppercase; font-size: 0.9em; }
         .data-table tbody tr:hover { background-color: #e6f7ff; }
 
         /* ETIQUETAS */
         .tag { display: inline-block; padding: 6px 14px; border-radius: 25px; font-size: 0.8em; font-weight: 700; }
         
         /* ACCIONES */
-        .actions button { background: none; border: none; padding: 5px 8px; cursor: pointer; font-size: 1.2em; margin-right: 5px; transition: color 0.2s; }
-        .actions .btn-edit { color: #0dcaf0; }
-        .actions .btn-delete-icon { color: #dc3545; }
+        .actions button { background: none; border: none; padding: 5px 8px; cursor: pointer; font-size: 1.2em; margin-right: 5px; }
 
         /* MODALES */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
         .modal.active { opacity: 1; display: flex; }
-        .modal-content { background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); width: 90%; max-width: 500px; transform: scale(0.9); transition: transform 0.3s ease-out; }
-        .modal.active .modal-content { transform: scale(1); }
-        .modal-content h3 { font-size: 2em; margin-bottom: 25px; color: #333; font-weight: 700; }
+        .modal-content { background-color: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 500px; transform: scale(0.9); transition: transform 0.3s ease-out; }
         .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
-        .btn-cancel { background-color: #f8f9fa; color: #333; border: 1px solid #ccc; }
         .category-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .category-table th, .category-table td { padding: 10px; border-bottom: 1px solid #eee; }
-        .category-actions button { font-size: 0.9em; margin-left: 5px; }
     </style>
 
     <div class="py-12">
@@ -73,7 +52,7 @@
 
                     {{-- ENCABEZADO Y BOTONES DE ACCIÓN --}}
                     <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eee; margin-bottom: 25px;">
-                        <h3 style="font-size: 1.8em; font-weight: 700; color: #333;">Productos</h3>
+                        <h3 style="font-size: 1.8em; font-weight: 700; color: #333;">Inventario de Productos</h3>
                         <div>
                             <button onclick="openModal('manageCategoriesModal')" class="btn-base btn-secondary">
                                 🏷️ Administrar Categorías
@@ -124,6 +103,7 @@
                                     <th>SKU</th>
                                     <th>Nombre</th>
                                     <th>Precio</th>
+                                    <th>Peso (g)</th>  {{-- ⬅️ ¡NUEVA COLUMNA! --}}
                                     <th>Categoría</th> 
                                     <th>Acciones</th>
                                 </tr>
@@ -135,6 +115,7 @@
                                         <td style="font-weight: 600;">{{ $product->sku }}</td>
                                         <td>{{ $product->name }}</td>
                                         <td style="font-weight: 700; color: #198754;">${{ number_format($product->price, 2) }}</td>
+                                        <td>{{ $product->weight_grams ?? 'N/A' }}g</td> {{-- ⬅️ ¡NUEVA CELDA! --}}
                                         <td>
                                             @if($product->category)
                                             <span class="tag" style="background-color: {{ $product->category->color_code ?? '#ccc' }}; color: {{ $product->category->color_code ? (strpos($product->category->color_code, '#000') !== false ? 'white' : 'black') : '#333' }};">
@@ -150,7 +131,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" style="text-align: center; color: #6c757d; padding: 30px; background-color: #fcfcfc;">No se encontraron productos con los filtros aplicados.</td></tr>
+                                    <tr><td colspan="7" style="text-align: center; color: #6c757d; padding: 30px; background-color: #fcfcfc;">No se encontraron productos con los filtros aplicados.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -178,6 +159,9 @@
                 <input type="text" name="sku" placeholder="SKU del Producto (Referencia)" required value="{{ old('sku') }}">
                 <input type="text" name="name" placeholder="Nombre del Producto" required value="{{ old('name') }}">
                 <input type="number" name="price" placeholder="Precio (ej: 10.50)" step="0.01" required value="{{ old('price') }}">
+                
+                {{-- ⬅️ CAMPO PESO AGREGADO --}}
+                <input type="number" name="weight_grams" placeholder="Peso en gramos (g)" min="0" value="{{ old('weight_grams') }}">
                 
                 {{-- SELECT CATEGORÍA --}}
                 <select name="product_category_id">
@@ -210,6 +194,9 @@
                 <input type="text" id="editName" name="name" placeholder="Nombre del Producto" required>
                 <input type="number" id="editPrice" name="price" placeholder="Precio (ej: 10.50)" step="0.01" required>
                 
+                {{-- ⬅️ CAMPO PESO AGREGADO --}}
+                <input type="number" id="editWeightGrams" name="weight_grams" placeholder="Peso en gramos (g)" min="0">
+                
                 {{-- SELECT CATEGORÍA --}}
                 <select id="editCategory" name="product_category_id">
                     <option value="">Seleccionar Categoría</option>
@@ -234,7 +221,7 @@
     <div id="deleteModal" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <h3 style="margin-bottom: 10px; color: #dc3545;">¿Confirmar Eliminación?</h3>
-            <p>Estás a punto de eliminar a: <strong id="deleteProductName" style="color: #000;"></strong>. Esta acción no se puede deshacer.</p>
+            <p>Estás a punto de eliminar a: <strong id="deleteProductName" style="color: #000;"></strong>.</p>
             
             <form id="deleteForm" method="POST">
                 @csrf
@@ -247,9 +234,7 @@
         </div>
     </div>
 
-    {{-- ***************************************************************** --}}
-    {{-- *************** MODALES CRUD DE CATEGORÍAS DE PRODUCTO ********** --}}
-    {{-- ***************************************************************** --}}
+    {{-- MODALES CRUD DE CATEGORÍAS DE PRODUCTO (Se mantienen iguales) --}}
     
     {{-- MODAL PRINCIPAL: GESTIÓN DE CATEGORÍAS --}}
     <div id="manageCategoriesModal" class="modal">
@@ -337,7 +322,11 @@
     {{-- ************************ SCRIPTS JS ***************************** --}}
     {{-- ***************************************************************** --}}
     <script>
-        // Funciones de Modal Base
+        const ALL_PRODUCTS = @json($products);
+        const CLIENTS = @json($clients); // Mantener por si se usa en otro lugar
+        let productLineCounter = 0;
+
+        // Base functions
         function openModal(id) {
             const modal = document.getElementById(id);
             modal.style.display = 'flex';
@@ -349,11 +338,12 @@
             setTimeout(() => modal.style.display = 'none', 300);
         }
 
-        // 1. Producto: Rellenar y abrir modal de Edición (U)
+        // 1. Abrir Modal de Edición (Rellenar todos los campos, incluido el peso)
         function openEditModal(product) {
             document.getElementById('editSku').value = product.sku;
             document.getElementById('editName').value = product.name;
             document.getElementById('editPrice').value = product.price;
+            document.getElementById('editWeightGrams').value = product.weight_grams; // ⬅️ ¡RELLENAR PESO!
             document.getElementById('editDescription').value = product.description;
             
             // Seleccionar la categoría actual del producto
@@ -363,14 +353,14 @@
             openModal('editModal');
         }
 
-        // 2. Producto: Rellenar y abrir modal de Eliminación (D)
+        // 2. Abrir Modal de Eliminación (D)
         function openDeleteModal(product) {
             document.getElementById('deleteProductName').innerText = product.name;
             document.getElementById('deleteForm').action = `{{ url('productos') }}/${product.id}`;
             openModal('deleteModal');
         }
         
-        // 3. Categoría: Rellenar y abrir modal de Edición de Categoría (U)
+        // 3. Abrir Modal de Edición de Categoría
         function openEditCategoryModal(category) {
             document.getElementById('editCategoryName').value = category.name;
             document.getElementById('editCategoryColor').value = category.color_code;
@@ -380,7 +370,7 @@
             openModal('editCategoryModal');
         }
 
-        // Manejar la reapertura de modales si hay errores de validación
+        // 4. Manejar la reapertura de modales si hay errores de validación
         @if ($errors->any())
             @if (session('open_modal'))
                 openModal('{{ session('open_modal') }}');

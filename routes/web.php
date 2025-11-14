@@ -46,6 +46,8 @@ Route::delete('/diariolog/{dailyLog}', [App\Http\Controllers\DailyLogController:
 
 Route::resource('ventas', App\Http\Controllers\SaleController::class);
 Route::get('ventas/{sale}/invoice', [App\Http\Controllers\SaleController::class, 'generateInvoice'])->name('ventas.invoice');
+Route::get('ventas/{sale}/invoice', [App\Http\Controllers\SaleController::class, 'generateInvoice'])->name('ventas.invoice'); // <- VISTA PREVIA
+Route::get('ventas/{sale}/download', [App\Http\Controllers\SaleController::class, 'downloadInvoice'])->name('ventas.download'); // <- DESCARGA DIRECTA
 });
 
 

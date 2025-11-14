@@ -57,7 +57,7 @@
         .modal-content { background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); width: 90%; max-width: 500px; transform: scale(0.9); transition: transform 0.3s ease-out; }
         .modal.active .modal-content { transform: scale(1); }
         .modal-content h3 { font-size: 2em; margin-bottom: 25px; color: #333; font-weight: 700; }
-        .modal-content input, .modal-content select { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
         .btn-cancel { background-color: #f8f9fa; color: #333; border: 1px solid #ccc; }
 
@@ -89,7 +89,7 @@
 
                     {{-- FILTROS --}}
                     <form method="GET" action="{{ route('clientes.index') }}" class="filter-form">
-                        <input type="search" name="search" value="{{ request('search') }}" placeholder="Buscar Cédula, Nombre o Email...">
+                        <input type="search" name="search" value="{{ request('search') }}" placeholder="Buscar Cédula/RUC, Nombre o Email...">
                         
                         {{-- FILTRO POR CATEGORÍA --}}
                         <select name="category_id">
@@ -124,7 +124,7 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Cédula</th>
+                                    <th>Cédula/RUC</th> {{-- ⬅️ Encabezado actualizado --}}
                                     <th>Nombre</th>
                                     <th>Email</th>
                                     <th>Teléfono</th>
@@ -180,7 +180,7 @@
             <h3>Crear Nuevo Cliente</h3>
             <form method="POST" action="{{ route('clientes.store') }}">
                 @csrf
-                <input type="text" name="cedula" placeholder="Cédula (10 dígitos)" value="{{ old('cedula') }}" maxlength="10">
+                <input type="text" name="cedula" placeholder="Cédula o RUC (13 dígitos)" value="{{ old('cedula') }}" maxlength="13">
                 <input type="text" name="nombre" placeholder="Nombre completo" required value="{{ old('nombre') }}">
                 <input type="email" name="email" placeholder="Email" value="{{ old('email') }}">
                 
@@ -211,7 +211,7 @@
             <form id="editForm" method="POST">
                 @csrf
                 @method('PUT')
-                <input type="text" id="editCedula" name="cedula" placeholder="Cédula (10 dígitos)" maxlength="10">
+                <input type="text" id="editCedula" name="cedula" placeholder="Cédula o RUC (13 dígitos)" maxlength="13">
                 <input type="text" id="editNombre" name="nombre" placeholder="Nombre completo" required>
                 <input type="email" id="editEmail" name="email" placeholder="Email">
                 
@@ -359,13 +359,12 @@
             document.getElementById('editCedula').value = cliente.cedula;
             document.getElementById('editNombre').value = cliente.nombre;
             document.getElementById('editEmail').value = cliente.email;
+            document.getElementById('editTelefono').value = cliente.telefono;
+            document.getElementById('editDireccion').value = cliente.direccion;
             
             // Seleccionar la categoría actual del cliente (maneja null si no tiene)
             document.getElementById('editCategory').value = cliente.client_category_id || '';
 
-            document.getElementById('editTelefono').value = cliente.telefono;
-            document.getElementById('editDireccion').value = cliente.direccion;
-            
             document.getElementById('editForm').action = `{{ url('clientes') }}/${cliente.id}`;
             openModal('editModal');
         }
@@ -389,12 +388,21 @@
 
         // Manejar la reapertura de modales si hay errores (ej: si falla la validación de un formulario)
         @if ($errors->any())
-            // Comprueba si Laravel nos pasó una variable de sesión para reabrir un modal específico
-            @if (session('open_modal'))
-                openModal('{{ session('open_modal') }}');
+            // Comprueba si el error viene de un formulario de categoría o cliente
+            @php
+                $isCategoryForm = old('name') && Request::routeIs('categories.store');
+            @endphp
+            
+            @if ($isCategoryForm)
+                openModal('manageCategoriesModal');
             @else
-                // Caso general: reabre el modal de creación de cliente por defecto si falla la validación
-                openModal('createModal');
+                // Reabre el modal de cliente (puede ser create o edit)
+                openModal('{{ old('_method') === 'PUT' ? 'editModal' : 'createModal' }}');
+                
+                // Si falla la edición, rellenar los campos (Cédula ya viene en old('cedula'))
+                @if (old('_method') === 'PUT')
+                    document.getElementById('editCedula').value = '{{ old('cedula') }}';
+                @endif
             @endif
         @endif
         
