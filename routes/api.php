@@ -1,19 +1,25 @@
 <?php
+// routes/api.php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\Api\ApiStockController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
+// 1. Rutas de Autenticación (Públicas)
+// 🚨 CORRECCIÓN: Quitamos la barra inicial de '/login' -> 'login'
+Route::get('/login', [ApiAuthController::class, 'login']); 
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// 2. Rutas Protegidas (Requiere Token)
+Route::middleware('auth:sanctum')->group(function () {
+
+    // API CRUD de Stock
+    Route::get('stock', [ApiStockController::class, 'index']); 
+    
+    // Ruta de actualización de stock (PUT /api/stock/{product})
+    // Notación 'stock/{product}' es correcta para resource binding
+    Route::put('stock/{product}', [ApiStockController::class, 'updateStock']); 
+
+    // API de Entrada Rápida por QR
+    // Ruta de QR 'stock/receive-qr' es correcta (se convierte en /api/stock/receive-qr)
+    Route::post('stock/receive-qr', [ApiStockController::class, 'receiveStockByQR']);
 });
