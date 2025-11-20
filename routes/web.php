@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
+    
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -50,7 +52,7 @@ Route::get('ventas/{sale}/invoice', [App\Http\Controllers\SaleController::class,
 Route::get('ventas/{sale}/download', [App\Http\Controllers\SaleController::class, 'downloadInvoice'])->name('ventas.download'); // <- DESCARGA DIRECTA
 });
 
-
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 
 require __DIR__.'/auth.php';

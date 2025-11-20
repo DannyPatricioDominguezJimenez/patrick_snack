@@ -65,6 +65,9 @@
         .category-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .category-table th, .category-table td { padding: 10px; border-bottom: 1px solid #eee; }
         .category-actions button { font-size: 0.9em; margin-left: 5px; }
+
+        /* 🚨 Estilo para mensajes de error de validación */
+        .validation-message { color: #dc3545; font-size: 0.85em; margin-top: -10px; margin-bottom: 15px; display: block; }
     </style>
 
     <div class="py-12">
@@ -113,8 +116,9 @@
                     @endif
                     
                     @if($errors->any())
+                        {{-- Mensaje de error general, el detalle irá junto al input --}}
                         <div style="background-color: #f8d7da; color: #842029; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c2c7;">
-                            ⚠️ Error de validación: Por favor, revisa los campos en el modal.
+                            ⚠️ Error de validación: Por favor, revisa los campos en el formulario.
                         </div>
                     @endif
 
@@ -124,7 +128,7 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Cédula/RUC</th> {{-- ⬅️ Encabezado actualizado --}}
+                                    <th>Cédula/RUC</th>
                                     <th>Nombre</th>
                                     <th>Email</th>
                                     <th>Teléfono</th>
@@ -180,9 +184,14 @@
             <h3>Crear Nuevo Cliente</h3>
             <form method="POST" action="{{ route('clientes.store') }}">
                 @csrf
-                <input type="text" name="cedula" placeholder="Cédula o RUC (13 dígitos)" value="{{ old('cedula') }}" maxlength="13">
+                <input type="text" name="cedula" placeholder="Cédula o RUC (10-13 dígitos)" value="{{ old('cedula') }}" maxlength="13">
+                @error('cedula') <span class="validation-message">{{ $message }}</span> @enderror
+
                 <input type="text" name="nombre" placeholder="Nombre completo" required value="{{ old('nombre') }}">
+                @error('nombre') <span class="validation-message">{{ $message }}</span> @enderror
+
                 <input type="email" name="email" placeholder="Email" value="{{ old('email') }}">
+                @error('email') <span class="validation-message">{{ $message }}</span> @enderror
                 
                 <select name="client_category_id">
                     <option value="">Seleccionar Categoría</option>
@@ -192,9 +201,13 @@
                         </option>
                     @endforeach
                 </select>
+                @error('client_category_id') <span class="validation-message">{{ $message }}</span> @enderror
                 
                 <input type="text" name="telefono" placeholder="Teléfono" value="{{ old('telefono') }}">
+                @error('telefono') <span class="validation-message">{{ $message }}</span> @enderror
+                
                 <input type="text" name="direccion" placeholder="Dirección" value="{{ old('direccion') }}">
+                @error('direccion') <span class="validation-message">{{ $message }}</span> @enderror
 
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('createModal')" class="btn-base btn-cancel">Cancelar</button>
@@ -211,9 +224,14 @@
             <form id="editForm" method="POST">
                 @csrf
                 @method('PUT')
-                <input type="text" id="editCedula" name="cedula" placeholder="Cédula o RUC (13 dígitos)" maxlength="13">
+                <input type="text" id="editCedula" name="cedula" placeholder="Cédula o RUC (10-13 dígitos)" maxlength="13">
+                @error('cedula') <span class="validation-message">{{ $message }}</span> @enderror
+                
                 <input type="text" id="editNombre" name="nombre" placeholder="Nombre completo" required>
+                @error('nombre') <span class="validation-message">{{ $message }}</span> @enderror
+                
                 <input type="email" id="editEmail" name="email" placeholder="Email">
+                @error('email') <span class="validation-message">{{ $message }}</span> @enderror
                 
                 <select id="editCategory" name="client_category_id">
                     <option value="">Seleccionar Categoría</option>
@@ -223,9 +241,13 @@
                         </option>
                     @endforeach
                 </select>
+                @error('client_category_id') <span class="validation-message">{{ $message }}</span> @enderror
                 
                 <input type="text" id="editTelefono" name="telefono" placeholder="Teléfono">
+                @error('telefono') <span class="validation-message">{{ $message }}</span> @enderror
+
                 <input type="text" id="editDireccion" name="direccion" placeholder="Dirección">
+                @error('direccion') <span class="validation-message">{{ $message }}</span> @enderror
 
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('editModal')" class="btn-base btn-cancel">Cancelar</button>
@@ -312,7 +334,11 @@
             <form method="POST" action="{{ route('categories.store') }}">
                 @csrf
                 <input type="text" name="name" placeholder="Nombre de la Categoría" required value="{{ old('name') }}">
+                @error('name') <span class="validation-message">{{ $message }}</span> @enderror
+
                 <input type="text" name="color_code" placeholder="Código de Color (ej: #0d6efd)" value="{{ old('color_code') }}">
+                @error('color_code') <span class="validation-message">{{ $message }}</span> @enderror
+                
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('createCategoryModal')" class="btn-base btn-cancel">Cancelar</button>
                     <button type="submit" class="btn-base btn-primary">Guardar</button>
@@ -329,7 +355,11 @@
                 @csrf
                 @method('PUT')
                 <input type="text" id="editCategoryName" name="name" placeholder="Nombre de la Categoría" required>
+                @error('name') <span class="validation-message">{{ $message }}</span> @enderror
+
                 <input type="text" id="editCategoryColor" name="color_code" placeholder="Código de Color (ej: #0d6efd)">
+                @error('color_code') <span class="validation-message">{{ $message }}</span> @enderror
+                
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('editCategoryModal')" class="btn-base btn-cancel">Cancelar</button>
                     <button type="submit" class="btn-base btn-primary">Actualizar</button>
@@ -390,11 +420,13 @@
         @if ($errors->any())
             // Comprueba si el error viene de un formulario de categoría o cliente
             @php
-                $isCategoryForm = old('name') && Request::routeIs('categories.store');
+                // Detectar si el error proviene de las categorías (ej: si old('name') existe, pero no hay old('cedula'))
+                $isCategoryForm = old('name') && !old('cedula'); 
             @endphp
             
             @if ($isCategoryForm)
-                openModal('manageCategoriesModal');
+                openModal('manageCategoriesModal'); // Abre el modal contenedor de categorías
+                openModal('{{ old('id') ? 'editCategoryModal' : 'createCategoryModal' }}'); // Abre el submodal específico
             @else
                 // Reabre el modal de cliente (puede ser create o edit)
                 openModal('{{ old('_method') === 'PUT' ? 'editModal' : 'createModal' }}');
@@ -402,6 +434,11 @@
                 // Si falla la edición, rellenar los campos (Cédula ya viene en old('cedula'))
                 @if (old('_method') === 'PUT')
                     document.getElementById('editCedula').value = '{{ old('cedula') }}';
+                    document.getElementById('editNombre').value = '{{ old('nombre') }}';
+                    document.getElementById('editEmail').value = '{{ old('email') }}';
+                    document.getElementById('editTelefono').value = '{{ old('telefono') }}';
+                    document.getElementById('editDireccion').value = '{{ old('direccion') }}';
+                    document.getElementById('editCategory').value = '{{ old('client_category_id') }}';
                 @endif
             @endif
         @endif

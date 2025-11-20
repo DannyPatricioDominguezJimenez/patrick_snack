@@ -7,6 +7,7 @@ use App\Models\ClientCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect; 
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException; // Necesario para la excepción
 
 class ClientController extends Controller
 {
@@ -30,12 +31,11 @@ class ClientController extends Controller
     {
         $query = Client::query();
         $search = $request->input('search');
-        $categoryFilter = $request->input('client_category_id'); // Corregido el nombre de input
+        $categoryFilter = $request->input('category_id'); 
         
-        // Cargar colecciones necesarias para la vista
         $categories = ClientCategory::all();
 
-        // 1. Búsqueda Global (Cédula, Nombre, Email, Teléfono)
+        // 1. Búsqueda Global 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('cedula', 'like', '%' . $search . '%')
@@ -52,7 +52,6 @@ class ClientController extends Controller
 
         $clientes = $query->with('category')->orderBy('id', 'desc')->paginate(10);
 
-        // Retornar la vista, pasando AMBAS variables
         return view('vistas.clientes', compact('clientes', 'categories'));
     }
 
@@ -62,8 +61,8 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // 🚨 CAMBIO CLAVE: Validación estricta de 13 dígitos
-            'cedula' => 'nullable|string|digits:13|unique:clients,cedula', 
+            // 🚨 CAMBIO CLAVE: Mínimo 10 y Máximo 13 dígitos
+            'cedula' => 'nullable|string|min:10|max:13|unique:clients,cedula', 
             'nombre' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'telefono' => 'nullable|string|max:20',
@@ -71,6 +70,8 @@ class ClientController extends Controller
             'client_category_id' => 'nullable|exists:client_categories,id',
         ]);
         
+        // Si se ingresaron 10 dígitos, el formato será 10. Si fueron 13, serán 13.
+        // La función formatCedula se mantiene para evitar nulls, pero no rellena si hay valor.
         $validated['cedula'] = $this->formatCedula($validated['cedula'] ?? null);
 
         $client = Client::create($validated);
@@ -84,8 +85,8 @@ class ClientController extends Controller
     public function update(Request $request, Client $cliente)
     {
         $validated = $request->validate([
-            // 🚨 CAMBIO CLAVE: Validación estricta de 13 dígitos
-            'cedula' => ['nullable', 'string', 'digits:13', Rule::unique('clients', 'cedula')->ignore($cliente->id)],
+            // 🚨 CAMBIO CLAVE: Mínimo 10 y Máximo 13 dígitos
+            'cedula' => ['nullable', 'string', 'min:10', 'max:13', Rule::unique('clients', 'cedula')->ignore($cliente->id)],
             'nombre' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'telefono' => 'nullable|string|max:20',
