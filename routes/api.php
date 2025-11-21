@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\ApiStockController;
 
 // 1. Rutas de Autenticación (Públicas)
 // 🚨 CORRECCIÓN: Quitamos la barra inicial de '/login' -> 'login'
-Route::get('/login', [ApiAuthController::class, 'login']); 
+Route::post('/login', [ApiAuthController::class, 'login']); 
 
 // 2. Rutas Protegidas (Requiere Token)
 Route::middleware('auth:sanctum')->group(function () {
