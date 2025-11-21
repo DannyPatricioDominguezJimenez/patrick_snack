@@ -40,20 +40,30 @@ class SaleController extends Controller
             // Por defecto, mostrar ventas del último mes
             $query->whereDate('sale_date', '>=', now()->subDays(30));
         }
+        
+        // 2. FILTRO POR ESTADO (Pagada / Pendiente / Cancelada) ⬅️ ¡NUEVA LÓGICA!
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // 3. FILTRO POR MÉTODO DE PAGO ⬅️ ¡NUEVA LÓGICA!
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->payment_method);
+        }
 
-        // 2. FILTRO POR CLIENTE INDIVIDUAL
+        // 4. FILTRO POR CLIENTE INDIVIDUAL
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
         }
 
-        // 3. FILTRO POR CATEGORÍA DE CLIENTE
+        // 5. FILTRO POR CATEGORÍA DE CLIENTE
         if ($request->filled('client_category_id')) {
             $query->whereHas('client', function ($q) use ($request) {
                 $q->where('client_category_id', $request->client_category_id);
             });
         }
         
-        // 4. FILTRO POR PRODUCTOS
+        // 6. FILTRO POR PRODUCTOS
         if ($request->filled('product_ids')) {
             $productIds = array_filter($request->input('product_ids')); 
             
@@ -86,7 +96,7 @@ class SaleController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validación (Añadidas reglas para payment_method y status)
+        // 1. Validación
         $request->validate([
             'client_id' => 'required|exists:clients,id',
             'sale_date' => 'required|date',
@@ -102,13 +112,13 @@ class SaleController extends Controller
         try {
             DB::beginTransaction();
 
-            // 2. Crear el Encabezado de Venta (Guardando los nuevos campos)
+            // 2. Crear el Encabezado de Venta
             $sale = Sale::create([
                 'client_id' => $request->client_id,
                 'sale_date' => $request->sale_date,
                 'total_amount' => 0,
-                'payment_method' => $request->payment_method, // ⬅️ Guardar método
-                'status' => $request->status, // ⬅️ Guardar estado
+                'payment_method' => $request->payment_method, 
+                'status' => $request->status, 
             ]);
 
             $details = [];
@@ -225,8 +235,8 @@ class SaleController extends Controller
                 'client_id' => $request->client_id,
                 'sale_date' => $request->sale_date,
                 'total_amount' => $newTotalAmount,
-                'payment_method' => $request->payment_method, // ⬅️ Actualizar método
-                'status' => $request->status, // ⬅️ Actualizar estado
+                'payment_method' => $request->payment_method, 
+                'status' => $request->status, 
             ]);
 
             DB::commit();

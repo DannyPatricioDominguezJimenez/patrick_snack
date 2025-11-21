@@ -66,67 +66,90 @@
                     </div>
                 @endif
 
-                {{-- FORMULARIO DE FILTROS --}}
                 <form method="GET" action="{{ route('ventas.index') }}" class="filter-form">
-                    <div class="filter-grid">
-                        
-                        {{-- Filtro 1: Rango de Fechas --}}
-                        <div class="filter-item">
-                            <label for="start_date">Fecha Desde</label>
-                            <input type="date" name="start_date" id="start_date" value="{{ $startDate ?? '' }}">
-                        </div>
-                        <div class="filter-item">
-                            <label for="end_date">Fecha Hasta</label>
-                            <input type="date" name="end_date" id="end_date" value="{{ $endDate ?? '' }}">
-                        </div>
+    {{-- 🚨 AJUSTE CLAVE: Usamos 6 columnas para mejor distribución horizontal --}}
+    <div class="filter-grid" style="grid-template-columns: repeat(6, 1fr); gap: 15px; align-items: flex-end;"> 
+        
+        {{-- Grupo 1: Rango de Fechas (Ocupa 2 Columnas) --}}
+        <div class="filter-item">
+            <label for="start_date">Fecha Desde</label>
+            <input type="date" name="start_date" id="start_date" value="{{ $startDate ?? '' }}">
+        </div>
+        <div class="filter-item">
+            <label for="end_date">Fecha Hasta</label>
+            <input type="date" name="end_date" id="end_date" value="{{ $endDate ?? '' }}">
+        </div>
 
-                        {{-- Filtro 2: Cliente Individual --}}
-                        <div class="filter-item">
-                            <label for="client_id">Cliente</label>
-                            <select name="client_id">
-                                <option value="">Todos los Clientes</option>
-                                @foreach ($clients as $client)
-                                    <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                        {{ $client->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        
-                        {{-- Filtro 3: Categoría de Cliente --}}
-                        <div class="filter-item">
-                            <label for="client_category_id">Categoría Cliente</label>
-                            <select name="client_category_id">
-                                <option value="">Todas las Categorías</option>
-                                @foreach ($clientCategories as $cat)
-                                    <option value="{{ $cat->id }}" {{ request('client_category_id') == $cat->id ? 'selected' : '' }}>
-                                        {{ $cat->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+        {{-- Grupo 2: Estado y Pago (Ocupa 2 Columnas) --}}
+        <div class="filter-item">
+            <label for="status">Estado</label>
+            <select name="status">
+                <option value="">Todos los Estados</option>
+                <option value="Pagada" {{ request('status') == 'Pagada' ? 'selected' : '' }}>Pagada</option>
+                <option value="Pendiente" {{ request('status') == 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="payment_method">Método Pago</label>
+            <select name="payment_method">
+                <option value="">Todos los Métodos</option>
+                <option value="Efectivo" {{ request('payment_method') == 'Efectivo' ? 'selected' : '' }}>Efectivo</option>
+                <option value="Transferencia" {{ request('payment_method') == 'Transferencia' ? 'selected' : '' }}>Transferencia</option>
+                <option value="Credito" {{ request('payment_method') == 'Credito' ? 'selected' : '' }}>Crédito</option>
+            </select>
+        </div>
 
-                        {{-- Filtro 4: Productos (Checkboxes) --}}
-                        <div class="filter-item" style="grid-column: span 1;">
-                            <label for="product_ids">Filtrar por Productos</label>
-                            <button type="button" onclick="openProductFilterModal()" class="btn-base btn-cancel" style="width: 100%; padding: 10px;">
-                                Seleccionar Productos
-                            </button>
-                            @foreach ($products as $product)
-                                <input type="hidden" name="product_ids[]" id="hidden-prod-{{ $product->id }}" value="{{ in_array($product->id, request('product_ids', [])) ? $product->id : '' }}">
-                            @endforeach
-                        </div>
-                    </div>
-                    
-                    <div class="filter-actions">
-                        <button type="submit" class="btn-base btn-primary" style="padding: 10px 30px;">
-                            🔍 Aplicar Filtros
-                        </button>
-                        <a href="{{ route('ventas.index') }}" class="btn-base btn-cancel" style="padding: 10px 30px;">
-                            Limpiar
-                        </a>
-                    </div>
-                </form>
+        {{-- Grupo 3: Cliente (Individual y Categoría) (Ocupa 2 Columnas) --}}
+        <div class="filter-item">
+            <label for="client_id">Cliente Individual</label>
+            <select name="client_id">
+                <option value="">Todos los Clientes</option>
+                @foreach ($clients as $client)
+                    <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                        {{ $client->nombre }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="client_category_id">Categoría Cliente</label>
+            <select name="client_category_id">
+                <option value="">Todas las Categorías</option>
+                @foreach ($clientCategories as $cat)
+                    <option value="{{ $cat->id }}" {{ request('client_category_id') == $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- 🚨 Filtro 4: Productos (Botón de Selección que ocupa 1 columna extra) --}}
+        {{-- Movemos este botón fuera del grid principal y lo ponemos en la fila de acciones para mantener 6 columnas fijas --}}
+        
+    </div>
+    
+    {{-- ACCIONES DE FILTRO Y BOTÓN DE PRODUCTOS --}}
+    <div class="filter-actions" style="grid-column: span 6; justify-content: space-between; padding-top: 10px;">
+        
+        <div style="width: 250px;">
+             <button type="button" onclick="openProductFilterModal()" class="btn-base btn-cancel" style="width: 100%; padding: 10px;">
+                Seleccionar Productos
+            </button>
+            @foreach ($products as $product)
+                <input type="hidden" name="product_ids[]" id="hidden-prod-{{ $product->id }}" value="{{ in_array($product->id, request('product_ids', [])) ? $product->id : '' }}">
+            @endforeach
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn-base btn-primary" style="padding: 10px 30px;">
+                🔍 Aplicar Filtros
+            </button>
+            <a href="{{ route('ventas.index') }}" class="btn-base btn-cancel" style="padding: 10px 30px;">
+                Limpiar
+            </a>
+        </div>
+    </div>
+</form>
 
                 {{-- Botón de Creación de Venta --}}
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
